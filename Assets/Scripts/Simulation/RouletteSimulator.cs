@@ -18,6 +18,7 @@ namespace Simulation
         private IEnumerator rotateRoulette;
         private Dictionary<RandomItemType, int> countArr;
         private int match = 0;
+        private string[][] log;
         
         private void Start()
         {
@@ -30,6 +31,8 @@ namespace Simulation
                 [generator.itemList[4].Type] = 0,
                 [generator.itemList[5].Type] = 0,
             };
+
+            log = new string[RandomItemGenerator.MaxItemCount][];
         }
 
         public void OnClickSimulatorBtn()
@@ -53,11 +56,9 @@ namespace Simulation
                 var laps = random.Next(0, 11);
                 
                 var lapAngle = laps * 360;
-                var additionalAngle = ModifyTotalRotateAngle(controller.currentItem, targetItem);
+                var additionalAngle = GetAdditionalAngle(controller.currentItem, targetItem);
                 var totalAngle = lapAngle + additionalAngle + 30;
-
-                //var initialRotateValue = roulettePlate.transform.eulerAngles.z;
-
+                
                 var delta = 0.008f;
                 var startLerpValue = (float) GetStartLerpValue(delta, totalAngle, 3000);
                 var totalAnglesMoved = 0f;
@@ -94,8 +95,11 @@ namespace Simulation
                           $"{RandomItemType.Box} : {countArr[RandomItemType.Box]}\r\n" +
                           $"{RandomItemType.Ticket} : {countArr[RandomItemType.Ticket]}\r\n" +
                           $"{RandomItemType.Book} : {countArr[RandomItemType.Book]}");
+
+                var columnData = new SimulationData(i + 1, targetItem.Type, controller.currentItem.Type, startLerpValue);
+                log[i] = columnData.ToArray();
             }
-            
+            CsvController.WriteToCsv(log);
         }
         
         private double GetStartLerpValue(float ratio, float target, int count)
@@ -108,7 +112,7 @@ namespace Simulation
             countArr[controller.currentItem.Type]++;
         }
         
-        private float ModifyTotalRotateAngle(RandomItem current, RandomItem target)
+        private float GetAdditionalAngle(RandomItem current, RandomItem target)
         {
             var currentAngle = generator.itemList.FindIndex(value => value.Type == current.Type) * 60;
             var targetAngle = generator.itemList.FindIndex(value => value.Type == target.Type) * 60;
